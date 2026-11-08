@@ -26,8 +26,11 @@ export const OpCode = {
  */
 export const READ_ONLY_OPS: ReadonlySet<number> = new Set(Object.values(OpCode));
 
-/** Write op, deliberately kept out of OpCode / READ_ONLY_OPS. Only PtpTransport.selectCustomSlot sends it. */
+/** Write op, deliberately kept out of OpCode / READ_ONLY_OPS. Only PtpTransport.writeProp sends it. */
 export const SET_DEVICE_PROP_VALUE = 0x1016;
+
+/** The only properties the app may write: custom slot select (0xD18C), slot name (0xD18D) and slot fields (0xD18E–0xD1A5). */
+export const isWritableProp = (code: number) => code >= 0xd18c && code <= 0xd1a5;
 
 export const RespCode = {
   OK: 0x2001,

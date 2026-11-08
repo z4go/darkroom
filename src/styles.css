@@ -348,3 +348,19 @@ dl.kv dd { margin: 0; word-break: break-word; font-family: var(--mono); }
 .recipe-kv { display: grid; grid-template-columns: 1fr auto; gap: var(--s-50) var(--s-200); margin: 0; font-size: 14px; line-height: 20px; }
 .recipe-kv dt { color: var(--text-muted); }
 .recipe-kv dd { margin: 0; text-align: right; font-family: var(--mono); }
+.recipe-actions { display: flex; flex-wrap: wrap; gap: var(--s-75); margin-top: var(--s-200); padding-top: var(--s-200); border-top: 1px solid var(--border); }
+.load-row { display: flex; gap: var(--s-75); flex: 1 1 100%; }
+.select { width: auto; flex: 1; min-width: 0; padding-right: var(--s-300); }
+.input.wide { width: 100%; }
+.editor { border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--s-200); background: var(--bg-subtle); display: flex; flex-direction: column; gap: var(--s-200); }
+.editor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--s-100) var(--s-200); }
+.editor-grid .span-2 { grid-column: span 2; }
+@media (max-width: 480px) { .editor-grid .span-2 { grid-column: auto; } }
+.field-error li + li { margin-top: var(--s-25); }
+ul.field-error { margin: 0; padding-left: var(--s-300); }
+.link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; }
+.link-btn:hover { color: var(--accent-hover); }
+.backups ul { margin: 0; padding-left: var(--s-300); color: var(--text-muted); }
+.backups { border-top: 1px solid var(--border); }
+.dialog { border: 1px solid var(--border); border-radius: var(--r-xl); padding: var(--s-300); max-width: min(480px, calc(100vw - 32px)); width: 100%; color: var(--text); background: var(--surface); }
+.dialog::backdrop { background: rgba(17, 17, 17, 0.4); }

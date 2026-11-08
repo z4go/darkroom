@@ -1,4 +1,4 @@
-import { ContainerType, FujiProp, OpCode, READ_ONLY_OPS, RespCode, SET_DEVICE_PROP_VALUE, USB_CLASS_STILL_IMAGE, hex, opName, respName } from './codes';
+import { ContainerType, FujiProp, OpCode, READ_ONLY_OPS, RespCode, SET_DEVICE_PROP_VALUE, isWritableProp, USB_CLASS_STILL_IMAGE, hex, opName, respName } from './codes';
 
 const HEADER_LEN = 12;
 const READ_CHUNK = 512 * 1024;
@@ -145,15 +145,20 @@ export class PtpTransport {
   }
 
   /**
-   * The one write this app allows: point the custom settings editor at slot C1–C7
-   * (SetDevicePropValue 0xD18C, uint16). It changes which slot the following reads see,
-   * not the contents of any slot. Same call FilmKit and latent use for scanning presets.
+   * Point the custom settings editor at slot C1–C7 (SetDevicePropValue 0xD18C, uint16).
+   * Changes which slot the following reads and writes address, not slot contents.
    */
   async selectCustomSlot(slot: number): Promise<void> {
     if (!Number.isInteger(slot) || slot < 1 || slot > 7) throw new Error(`Invalid custom slot ${slot}: must be 1–7`);
     const data = new DataView(new ArrayBuffer(2));
     data.setUint16(0, slot, true);
-    await this.run(SET_DEVICE_PROP_VALUE, [FujiProp.CustomSlot], data);
+    await this.writeProp(FujiProp.CustomSlot, data);
+  }
+
+  /** SetDevicePropValue, restricted to the custom slot properties 0xD18C–0xD1A5. Throws PtpError if the camera refuses. */
+  async writeProp(code: number, data: DataView): Promise<void> {
+    if (!isWritableProp(code)) throw new Error(`Refusing to write ${hex(code)}: only custom slot properties 0xD18C–0xD1A5 are writable`);
+    await this.run(SET_DEVICE_PROP_VALUE, [code], data);
   }
 
   private async run(op: number, params: number[], dataOut?: DataView, opts: { allowCodes?: number[] } = {}): Promise<PtpResult> {

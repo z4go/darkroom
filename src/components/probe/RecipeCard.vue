@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { signed, type Recipe } from '../../ptp/recipe';
 
-const props = defineProps<{ recipe: Recipe }>();
+const props = defineProps<{ recipe: Recipe; hideSlot?: boolean }>();
 
 const rows = computed(() => {
   const r = props.recipe;
@@ -31,7 +31,7 @@ const rows = computed(() => {
 <template>
   <article class="recipe">
     <header class="recipe-head">
-      <span class="slot-badge">C{{ recipe.slot }}</span>
+      <span v-if="!hideSlot && recipe.slot" class="slot-badge">C{{ recipe.slot }}</span>
       <div>
         <p class="title-3">{{ recipe.name || 'Untitled' }}</p>
         <p class="body-6 muted">{{ recipe.filmSimulation }}</p>
@@ -43,5 +43,6 @@ const rows = computed(() => {
         <dd>{{ v }}</dd>
       </template>
     </dl>
+    <footer v-if="$slots.default" class="recipe-actions"><slot /></footer>
   </article>
 </template>
