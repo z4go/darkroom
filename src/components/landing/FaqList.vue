@@ -4,7 +4,7 @@ import SectionHead from '../SectionHead.vue';
 
 // Answers may contain trusted inline HTML (links, emphasis) written here.
 const faqs: { q: string; a: string }[] = [
-  { q: 'Does it change anything on my camera today?', a: 'No. The current version only reads device info. Writing custom settings arrives in Phase 3, behind an explicit backup step.' },
+  { q: 'What does it change on my camera?', a: 'Only the custom setting slots C1 to C7, and only when you load a preset and confirm. Before the first write of a session it backs up all seven slots, and after writing it reads every value back to check it. Nothing else on the camera is touched.' },
   { q: 'Which cameras work?', a: "The X100VI is confirmed. Other recent X series bodies likely use the same protocol but haven't been tested. If you try one, please open an issue with the device info from the app." },
   { q: "Why doesn't it work on my iPhone or in Safari?", a: "Those browsers don't implement WebUSB. Use Chrome or Edge on a computer, or Chrome on Android." },
   { q: 'Is my data sent anywhere?', a: 'No. The site is static files on GitHub Pages. The camera talks to your browser and nothing else, and there are no analytics.' },
