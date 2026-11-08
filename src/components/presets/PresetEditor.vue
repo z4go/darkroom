@@ -6,7 +6,7 @@ import { WB_COLOR_TEMP } from '../../ptp/recipe';
 const props = defineProps<{ preset: Preset }>();
 const emit = defineEmits<{ save: [p: Preset]; cancel: [] }>();
 
-const p = ref<Preset>(clonePreset(props.preset));
+const p = ref<Preset>({ imageQuality: 2, ...clonePreset(props.preset) });
 const tried = ref(false);
 const errors = computed(() => validatePreset(p.value));
 const mono = computed(() => isMono(p.value));
@@ -85,6 +85,10 @@ const numberFields = computed(() => {
       <label class="field">
         <span class="caption-4 muted">WB shift B</span>
         <input v-model.number="p.wbShiftB" class="input wide" type="number" :min="RANGES.wbShift.min" :max="RANGES.wbShift.max" step="1" />
+      </label>
+      <label class="field">
+        <span class="caption-4 muted">Image quality</span>
+        <select v-model.number="p.imageQuality" class="input wide select"><option v-for="o in OPTIONS.imageQuality" :key="o.value" :value="o.value">{{ o.label }}</option></select>
       </label>
       <label class="field">
         <span class="caption-4 muted">Dynamic range</span>

@@ -8,6 +8,9 @@ import AdvertisedProps from '../components/explore/AdvertisedProps.vue';
 import PropertySweep from '../components/explore/PropertySweep.vue';
 import StorageObjects from '../components/explore/StorageObjects.vue';
 import CameraErrorNotice from '../components/probe/CameraErrorNotice.vue';
+import DeviceSummary from '../components/probe/DeviceSummary.vue';
+import OperationsList from '../components/probe/OperationsList.vue';
+import PropertiesList from '../components/probe/PropertiesList.vue';
 import ConnectPanel from '../components/probe/ConnectPanel.vue';
 import LogPanel from '../components/probe/LogPanel.vue';
 import { useCamera } from '../composables/useCamera';
@@ -20,7 +23,7 @@ import { PROTOCOL, REPO } from '../links';
 const { supported } = useWebUsb();
 const { lines, log } = useLog();
 const camera = useCamera(log);
-const { status, error, info, connect, disconnect, transaction } = camera;
+const { status, error, info, device, usbMode, connect, disconnect, transaction } = camera;
 const ex = useExplore(transaction, info, log);
 const { busy, sweep } = ex;
 
@@ -46,7 +49,7 @@ function download() {
   <SiteNav
     home="../../"
     :links="[
-      { label: 'Probe', href: '../' },
+      { label: 'App', href: '../' },
       { label: 'Explore', href: './', current: true },
       { label: 'Protocol', href: PROTOCOL },
       { label: 'GitHub', href: REPO },
@@ -55,7 +58,7 @@ function download() {
 
   <main id="main" class="wrap-narrow">
     <header class="app-head">
-      <span class="eyebrow">Protocol explorer</span>
+      <span class="eyebrow">Developer tools · Protocol explorer</span>
       <h1 class="heading-4" style="margin-top: var(--s-100)">Find where the custom settings live</h1>
       <p class="body-3">Read only. The app refuses to send any command that could change the camera.</p>
     </header>
@@ -70,6 +73,9 @@ function download() {
         <CameraErrorNotice v-if="error" :error="error" />
 
         <template v-if="status === 'connected' && info">
+          <DeviceSummary v-if="device" :info="info" :device="device" :usb-mode="usbMode" />
+          <OperationsList :ops="info.operationsSupported" />
+          <PropertiesList :items="info.devicePropertiesSupported" />
           <AdvertisedProps
             :results="ex.props.value"
             :count="info.devicePropertiesSupported.length"
@@ -79,6 +85,8 @@ function download() {
           />
           <PropertySweep
             :sweep="sweep"
+            :compared-with="ex.baseline.value?.at ?? null"
+            :gone="ex.gone.value"
             :busy="busy === 'sweep'"
             :disabled="!!busy"
             @run="ex.runSweep"

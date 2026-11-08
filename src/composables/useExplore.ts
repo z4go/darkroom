@@ -13,6 +13,7 @@ import type { DeviceInfo } from '../ptp/deviceinfo';
 import { guessValue, toHex } from '../ptp/hexdump';
 import { PtpError, type PtpResult } from '../ptp/transport';
 import type { LogFn } from './useLog';
+import { useStoredRef } from './useStoredRef';
 
 type Transaction = (op: number, params?: number[]) => Promise<PtpResult>;
 
@@ -29,6 +30,17 @@ export interface SweepHit {
   hex: string;
   guess: string;
   desc?: PropDesc;
+  /** Compared with the previous saved sweep: 'same', 'changed', or 'new' (no baseline value). */
+  diff?: 'same' | 'changed' | 'new';
+  before?: string;
+  beforeGuess?: string;
+}
+
+interface SavedSweep {
+  at: string;
+  from: number;
+  to: number;
+  hits: { code: number; hex: string; guess: string }[];
 }
 
 const OBJECT_LIMIT = 100;
@@ -89,6 +101,11 @@ export function useExplore(transaction: Transaction, info: ShallowRef<DeviceInfo
   });
   let stopRequested = false;
 
+  // Previous completed sweep, kept in the browser so you can unplug, change a camera setting, and compare.
+  const { value: lastSweep } = useStoredRef<SavedSweep | null>('darkroom.explore.lastSweep', null);
+  const baseline = ref<SavedSweep | null>(null);
+  const gone = ref<{ code: number; hex: string; guess: string }[]>([]);
+
   async function runSweep() {
     if (busy.value) return;
     const from = Math.min(sweep.from, sweep.to);
@@ -96,14 +113,26 @@ export function useExplore(transaction: Transaction, info: ShallowRef<DeviceInfo
     busy.value = 'sweep';
     stopRequested = false;
     Object.assign(sweep, { done: 0, total: to - from + 1, hits: [], misses: {}, error: '' });
-    log(`sweep ${hex(from)}–${hex(to)} start`);
+    baseline.value = lastSweep.value;
+    gone.value = [];
+    const before = new Map((baseline.value?.hits ?? []).map((h) => [h.code, h]));
+    const inBaseline = (code: number) => !!baseline.value && code >= baseline.value.from && code <= baseline.value.to;
+    log(`sweep ${hex(from)}–${hex(to)} start${baseline.value ? `, comparing with sweep from ${baseline.value.at}` : ''}`);
     try {
       for (let code = from; code <= to && !stopRequested; code++) {
         sweep.current = code;
         try {
           const res = await transaction(OpCode.GetDevicePropValue, [code]);
           const data = res.data ?? new DataView(new ArrayBuffer(0));
-          const hit: SweepHit = { code, bytes: data.byteLength, hex: toHex(data), guess: guessValue(data) };
+          const hit: SweepHit = { code, bytes: data.byteLength, hex: toHex(data, 512), guess: guessValue(data) };
+          if (inBaseline(code)) {
+            const b = before.get(code);
+            hit.diff = !b ? 'new' : b.hex === hit.hex ? 'same' : 'changed';
+            if (b && hit.diff === 'changed') {
+              hit.before = b.hex;
+              hit.beforeGuess = b.guess;
+            }
+          }
           try {
             const d = await transaction(OpCode.GetDevicePropDesc, [code]);
             if (d.data) hit.desc = parsePropDesc(d.data);
@@ -124,6 +153,15 @@ export function useExplore(transaction: Transaction, info: ShallowRef<DeviceInfo
         sweep.done++;
       }
       log(`sweep done: ${sweep.hits.length} answered, ${sweep.done} tried${stopRequested ? ' (stopped)' : ''}`);
+      if (baseline.value) {
+        const now = new Set(sweep.hits.map((h) => h.code));
+        gone.value = baseline.value.hits.filter((h) => h.code >= from && h.code <= Math.min(to, sweep.current) && !now.has(h.code));
+        const changed = sweep.hits.filter((h) => h.diff === 'changed').length;
+        log(`compared: ${changed} changed, ${sweep.hits.filter((h) => h.diff === 'new').length} new, ${gone.value.length} gone`);
+      }
+      if (!stopRequested && !sweep.error) {
+        lastSweep.value = { at: new Date().toISOString(), from, to, hits: sweep.hits.map(({ code, hex: hx, guess }) => ({ code, hex: hx, guess })) };
+      }
     } finally {
       busy.value = null;
     }
@@ -192,7 +230,7 @@ export function useExplore(transaction: Transaction, info: ShallowRef<DeviceInfo
       capturedAt: new Date().toISOString(),
       device: info.value ? { ...info.value, serialNumber: '(redacted)' } : null,
       advertisedProps: props.value,
-      sweep: { from: hex(sweep.from), to: hex(sweep.to), tried: sweep.done, hits: sweep.hits, misses: sweep.misses, error: sweep.error || undefined },
+      sweep: { from: hex(sweep.from), to: hex(sweep.to), tried: sweep.done, hits: sweep.hits, misses: sweep.misses, error: sweep.error || undefined, comparedWith: baseline.value?.at, gone: gone.value },
       storages: storages.value,
       objects: objects.value,
       objectTotal: objectTotal.value,
@@ -205,6 +243,8 @@ export function useExplore(transaction: Transaction, info: ShallowRef<DeviceInfo
     readAdvertised,
     sweep,
     runSweep,
+    baseline,
+    gone,
     stopSweep,
     storages,
     objects,

@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { usePresetLibrary } from '../../composables/usePresetLibrary';
 import { defaultPreset, presetToRecipe, type Preset } from '../../ptp/preset';
 import RecipeCard from '../probe/RecipeCard.vue';
 import PresetEditor from './PresetEditor.vue';
 
 const props = defineProps<{ library: ReturnType<typeof usePresetLibrary> }>();
+const builtinGroups = computed(() => {
+  const m = new Map<string, Preset[]>();
+  for (const p of props.library.builtin) m.set(p.setName ?? 'Built-in', [...(m.get(p.setName ?? 'Built-in') ?? []), p]);
+  return [...m.entries()];
+});
+function copyBuiltin(p: Preset) {
+  const c = props.library.duplicate(p);
+  message.value = `Copied "${c.name}" to your presets. Edit it there.`;
+}
 const editing = ref<Preset | null>(null);
 const message = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -67,6 +76,19 @@ defineExpose({ edit: (p: Preset) => (editing.value = p) });
         <button class="btn secondary sm" type="button" @click="remove(p)">Delete</button>
       </RecipeCard>
     </div>
+    <div class="panel-body stack builtin">
+      <p class="title-4">Built-in recipes</p>
+      <p class="body-6 muted">Included with the site, so they're here on any device. Load them straight into the camera, or copy one to your presets to change it.</p>
+    </div>
+    <template v-for="[set, list] in builtinGroups" :key="set">
+      <p class="caption-3 muted set-label">{{ set }}</p>
+      <div class="recipe-grid">
+        <RecipeCard v-for="p in list" :key="p.id" :recipe="presetToRecipe(p, p.slotHint ?? 0)" :hide-slot="!p.slotHint">
+          <button class="btn secondary sm" type="button" @click="copyBuiltin(p)">Copy to my presets</button>
+          <button class="btn secondary sm" type="button" @click="library.exportOne(p)">Export</button>
+        </RecipeCard>
+      </div>
+    </template>
     <div v-if="library.backups.value.length" class="panel-body stack backups">
       <p class="title-4">Slot backups</p>
       <ul class="body-6">

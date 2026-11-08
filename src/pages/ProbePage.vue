@@ -3,17 +3,15 @@ import { computed, ref } from 'vue';
 import NoticeBox from '../components/NoticeBox.vue';
 import SiteFooter from '../components/SiteFooter.vue';
 import SiteNav from '../components/SiteNav.vue';
+import BatchLoadPanel from '../components/presets/BatchLoadPanel.vue';
 import PresetLibrary from '../components/presets/PresetLibrary.vue';
 import WriteConfirmDialog from '../components/presets/WriteConfirmDialog.vue';
 import CameraErrorNotice from '../components/probe/CameraErrorNotice.vue';
 import ConnectPanel from '../components/probe/ConnectPanel.vue';
 import CustomSlotsPanel from '../components/probe/CustomSlotsPanel.vue';
-import DeviceSummary from '../components/probe/DeviceSummary.vue';
 import EmptyState from '../components/probe/EmptyState.vue';
 import LoadingSkeleton from '../components/probe/LoadingSkeleton.vue';
 import LogPanel from '../components/probe/LogPanel.vue';
-import OperationsList from '../components/probe/OperationsList.vue';
-import PropertiesList from '../components/probe/PropertiesList.vue';
 import { useCamera } from '../composables/useCamera';
 import { useCustomSlots, type SlotData } from '../composables/useCustomSlots';
 import { useLog } from '../composables/useLog';
@@ -24,7 +22,7 @@ import { presetFromRaw, type Preset } from '../ptp/preset';
 
 const { supported } = useWebUsb();
 const { lines, log } = useLog();
-const { status, error, info, device, usbMode, connect, disconnect, transaction, selectCustomSlot, writeProp } = useCamera(log);
+const { status, error, info, device, connect, disconnect, transaction, selectCustomSlot, writeProp } = useCamera(log);
 const library = usePresetLibrary();
 const slots = useCustomSlots(transaction, selectCustomSlot, writeProp, info, log, library.addBackup);
 const libraryRef = ref<InstanceType<typeof PresetLibrary> | null>(null);
@@ -40,7 +38,7 @@ function saveSlot(s: SlotData) {
 const pending = ref<{ slot: number; preset: Preset } | null>(null);
 const pendingName = computed(() => slots.slots.value.find((s) => s.slot === pending.value?.slot)?.name ?? '');
 function askLoad(slot: number, presetId: string) {
-  const preset = library.presets.value.find((p) => p.id === presetId);
+  const preset = library.all.value.find((p) => p.id === presetId);
   if (preset) pending.value = { slot, preset };
 }
 async function confirmLoad() {
@@ -55,7 +53,6 @@ async function confirmLoad() {
     home="../"
     :links="[
       { label: 'App', href: './', current: true },
-      { label: 'Explore', href: './explore/' },
       { label: 'Setup', href: '../#how' },
       { label: 'GitHub', href: REPO },
     ]"
@@ -83,7 +80,7 @@ async function confirmLoad() {
           <CustomSlotsPanel
             v-if="slots.supported.value"
             :slots="slots.slots.value"
-            :presets="library.presets.value"
+            :presets="library.all.value"
             :busy="slots.busy.value"
             :progress="slots.progress.value"
             :error="slots.error.value"
@@ -94,13 +91,20 @@ async function confirmLoad() {
             @save="saveSlot"
             @load="askLoad"
           />
-          <NoticeBox v-else title="Custom settings aren't available in this connection" icon="warning">
+          <BatchLoadPanel
+            v-if="slots.supported.value && slots.slots.value.length"
+            :slots="slots.slots.value"
+            :presets="library.all.value"
+            :busy="slots.busy.value"
+            :batch="slots.batch.value"
+            :backup-taken="slots.backupTaken.value"
+            :sets="library.sets.value"
+            @run="slots.writeMany"
+          />
+          <NoticeBox v-if="!slots.supported.value" title="Custom settings aren't available in this connection" icon="warning">
             The camera didn't advertise 0xD18C. Unplug it, check Connection Mode is USB RAW CONV./BACKUP RESTORE, start
             <code>bun run free-camera</code> before plugging in again (macOS), then reconnect.
           </NoticeBox>
-          <DeviceSummary :info="info" :device="device" :usb-mode="usbMode" />
-          <OperationsList :ops="info.operationsSupported" />
-          <PropertiesList :items="info.devicePropertiesSupported" />
         </template>
         <EmptyState v-else />
       </template>
@@ -126,6 +130,7 @@ async function confirmLoad() {
       { label: 'Home', href: '../' },
       { label: 'Protocol', href: PROTOCOL },
       { label: 'Privacy', href: '../privacy/' },
+      { label: 'Developer tools', href: './explore/' },
       { label: 'GitHub', href: REPO },
     ]"
   />

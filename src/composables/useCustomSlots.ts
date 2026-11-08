@@ -2,7 +2,7 @@ import { computed, ref, type ShallowRef } from 'vue';
 import { FujiProp, OpCode, hex } from '../ptp/codes';
 import type { DeviceInfo } from '../ptp/deviceinfo';
 import { presetWrites, validatePreset, type Preset } from '../ptp/preset';
-import { decodeSlot, SLOT_FIRST_FIELD, SLOT_LAST_FIELD, SLOT_NAME, type Recipe, type SlotRaw } from '../ptp/recipe';
+import { decodeSlot, GRAIN_OFF_VALUES, SLOT_FIRST_FIELD, SLOT_LAST_FIELD, SLOT_NAME, type Recipe, type SlotRaw } from '../ptp/recipe';
 import { Reader } from '../ptp/reader';
 import { PtpError, type PtpResult } from '../ptp/transport';
 import type { LogFn } from './useLog';
@@ -156,14 +156,14 @@ export function useCustomSlots(
     }
   }
 
-  async function writePreset(slot: number, preset: Preset): Promise<WriteResult> {
+  async function writePreset(slot: number, preset: Preset, inBatch = false): Promise<WriteResult> {
     const result: WriteResult = { ok: false, slot, name: preset.name, warnings: [], mismatches: [] };
-    if (busy.value) return { ...result, error: 'Camera is busy' };
+    if (busy.value && !inBatch) return { ...result, error: 'Camera is busy' };
     const problems = validatePreset(preset);
     if (problems.length) return { ...result, error: problems.join(' ') };
     if (slot < 1 || slot > 7) return { ...result, error: 'Slot must be C1–C7' };
 
-    busy.value = 'write';
+    if (!inBatch) busy.value = 'write';
     error.value = '';
     let original: number | null = null;
     try {
@@ -205,7 +205,8 @@ export function useCustomSlots(
       if (after.name !== preset.name) result.mismatches.push(`name is "${after.name}"`);
       for (const w of written) {
         const got = after.raw[w.code];
-        if (got !== w.value) result.mismatches.push(`${hex(w.code)} is ${got}, expected ${w.value}`);
+        const same = got === w.value || (w.code === 0xd195 && GRAIN_OFF_VALUES.has(w.value) && GRAIN_OFF_VALUES.has(got));
+        if (!same) result.mismatches.push(`${hex(w.code)} is ${got}, expected ${w.value}`);
       }
       upsert(after);
       result.ok = result.mismatches.length === 0;
@@ -222,11 +223,34 @@ export function useCustomSlots(
           result.warnings.push(`Couldn't restore selected slot C${original}: ${describe(e)}`);
         }
       }
-      busy.value = null;
+      if (!inBatch) busy.value = null;
       lastWrite.value = result;
     }
     return result;
   }
 
-  return { slots, recipes, busy, progress, error, supported, backupTaken, lastWrite, readCurrent, readAll, writePreset };
+  const batch = ref<{ total: number; results: WriteResult[] } | null>(null);
+
+  /** Write several slots one after another (one backup, one confirmation). Stops at the first hard error. */
+  async function writeMany(jobs: { slot: number; preset: Preset }[]) {
+    if (busy.value || !jobs.length) return;
+    busy.value = 'write';
+    lastWrite.value = null;
+    batch.value = { total: jobs.length, results: [] };
+    try {
+      for (const j of jobs) {
+        const r = await writePreset(j.slot, j.preset, true);
+        batch.value.results.push(r);
+        if (r.error) {
+          log(`batch stopped at C${j.slot}: ${r.error}`);
+          break;
+        }
+      }
+    } finally {
+      lastWrite.value = null;
+      busy.value = null;
+    }
+  }
+
+  return { slots, recipes, busy, progress, error, supported, backupTaken, lastWrite, batch, readCurrent, readAll, writePreset, writeMany };
 }

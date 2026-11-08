@@ -61,7 +61,12 @@ function load(slot: number) {
         <div class="load-row">
           <select v-model="pick[s.slot]" class="input select" :disabled="!!busy || !presets.length" :aria-label="`Preset to load into C${s.slot}`">
             <option value="" disabled>{{ presets.length ? 'Choose a preset' : 'Library is empty' }}</option>
-            <option v-for="p in presets" :key="p.id" :value="p.id">{{ p.name }}</option>
+            <optgroup v-if="presets.some((p) => !p.builtin)" label="My presets">
+              <option v-for="p in presets.filter((x) => !x.builtin)" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </optgroup>
+            <optgroup label="Built-in">
+              <option v-for="p in presets.filter((x) => x.builtin)" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </optgroup>
           </select>
           <button class="btn sm" type="button" :disabled="!!busy || !pick[s.slot]" @click="load(s.slot)">Load</button>
         </div>
