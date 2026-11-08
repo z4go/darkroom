@@ -1,6 +1,6 @@
 # darkroom
 
-PTP-over-USB toolkit to read and write Fujifilm custom settings (C1–C7). Rust probe + WebUSB web app.
+WebUSB web app to read and write Fujifilm custom settings (C1–C7) over PTP. Runs entirely in the browser.
 
 **Site:** https://z4go.github.io/darkroom/ · **App:** https://z4go.github.io/darkroom/app/
 

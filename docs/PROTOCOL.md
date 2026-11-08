@@ -58,7 +58,7 @@ Captured 2026-11-08 with the web probe on macOS (Arc), Connection Mode **USB RAW
 ### Observations
 
 - Only four properties are advertised. Custom settings (C1–C7) are not in the list, so they are either reachable through unadvertised vendor property codes or only through the backup/restore object path (`0x900C`/`0x900D` + GetObject).
-- Next step (Rust probe): read `0xD303`, `0xD406`, `0xD407`; sweep GetDevicePropValue over vendor ranges (`0xD000`–`0xD3FF`) and log which codes answer; list storage/objects in this mode to see whether a settings backup object is exposed.
+- Next step (web Explore page): read `0xD303`, `0xD406`, `0xD407`; sweep GetDevicePropValue over vendor ranges (`0xD000`–`0xD3FF`) and log which codes answer; list storage/objects in this mode to see whether a settings backup object is exposed.
 
 ## Custom settings (C1–C7)
 
