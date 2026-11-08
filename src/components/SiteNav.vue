@@ -10,6 +10,7 @@ export interface NavLink {
 
 defineProps<{
   home: string;
+  homeCurrent?: boolean;
   links: NavLink[];
   cta?: NavLink;
 }>();
@@ -21,7 +22,7 @@ const { open, toggle, close } = useMobileNav();
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="nav-shell">
     <nav class="nav" aria-label="Main">
-      <a class="brand" :href="home"><AppIcon name="aperture" class="brand-mark" />darkroom</a>
+      <a class="brand" :href="home" :aria-current="homeCurrent ? 'page' : undefined"><AppIcon name="aperture" class="brand-mark" />darkroom</a>
       <div class="nav-links">
         <a v-for="l in links" :key="l.href" :href="l.href" :aria-current="l.current ? 'page' : undefined">{{ l.label }}</a>
         <a v-if="cta" class="btn sm" :href="cta.href">{{ cta.label }}</a>
