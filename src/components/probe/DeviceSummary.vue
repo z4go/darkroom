@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useClipboard } from '../../composables/useClipboard';
-import { hex } from '../../ptp/codes';
+import { FujiProp, USB_MODE_NAMES, hex } from '../../ptp/codes';
 import type { DeviceInfo } from '../../ptp/deviceinfo';
 import AppIcon from '../AppIcon.vue';
 
-const props = defineProps<{ info: DeviceInfo; device: USBDevice }>();
+const props = defineProps<{ info: DeviceInfo; device: USBDevice; usbMode?: number | null }>();
 const { state, copy } = useClipboard();
 
 const rows = computed(() => {
@@ -17,6 +17,8 @@ const rows = computed(() => {
     ['Serial', i.serialNumber],
     ['USB IDs', `${hex(props.device.vendorId)}:${hex(props.device.productId)}`],
     ['PTP version', (i.standardVersion / 100).toFixed(2)],
+    ['Fuji USB mode', props.usbMode == null ? 'not exposed (generic MTP mode)' : `${props.usbMode} · ${USB_MODE_NAMES[props.usbMode] ?? 'unknown'}`],
+    ['Custom slots', i.devicePropertiesSupported.includes(FujiProp.CustomSlot) ? 'available (0xD18C)' : 'not available'],
     ['Vendor extension', `${hex(i.vendorExtensionId, 8)} v${i.vendorExtensionVersion}${i.vendorExtensionDesc ? ' — ' + i.vendorExtensionDesc : ''}`],
   ] as const;
 });

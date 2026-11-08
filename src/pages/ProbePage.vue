@@ -3,6 +3,7 @@ import NoticeBox from '../components/NoticeBox.vue';
 import SiteFooter from '../components/SiteFooter.vue';
 import SiteNav from '../components/SiteNav.vue';
 import CameraErrorNotice from '../components/probe/CameraErrorNotice.vue';
+import CustomSlotsPanel from '../components/probe/CustomSlotsPanel.vue';
 import ConnectPanel from '../components/probe/ConnectPanel.vue';
 import DeviceSummary from '../components/probe/DeviceSummary.vue';
 import EmptyState from '../components/probe/EmptyState.vue';
@@ -11,20 +12,23 @@ import LogPanel from '../components/probe/LogPanel.vue';
 import OperationsList from '../components/probe/OperationsList.vue';
 import PropertiesList from '../components/probe/PropertiesList.vue';
 import { useCamera } from '../composables/useCamera';
+import { useCustomSlots } from '../composables/useCustomSlots';
 import { useLog } from '../composables/useLog';
 import { useWebUsb } from '../composables/useWebUsb';
 import { PROTOCOL, REPO } from '../links';
 
 const { supported } = useWebUsb();
 const { lines, log } = useLog();
-const { status, error, info, device, connect, disconnect } = useCamera(log);
+const { status, error, info, device, usbMode, connect, disconnect, transaction, selectCustomSlot } = useCamera(log);
+const slots = useCustomSlots(transaction, selectCustomSlot, info, log);
 </script>
 
 <template>
   <SiteNav
     home="../"
     :links="[
-      { label: 'App', href: './', current: true },
+      { label: 'Probe', href: './', current: true },
+      { label: 'Explore', href: './explore/' },
       { label: 'Setup', href: '../#how' },
       { label: 'Troubleshooting', href: '../#troubleshooting' },
       { label: 'GitHub', href: REPO },
@@ -50,7 +54,20 @@ const { status, error, info, device, connect, disconnect } = useCamera(log);
 
         <LoadingSkeleton v-if="status === 'connecting'" />
         <div v-else-if="info && device" class="stack">
-          <DeviceSummary :info="info" :device="device" />
+          <DeviceSummary :info="info" :device="device" :usb-mode="usbMode" />
+          <CustomSlotsPanel
+            v-if="slots.supported.value"
+            :recipes="slots.recipes.value"
+            :busy="slots.busy.value"
+            :progress="slots.progress.value"
+            :error="slots.error.value"
+            @current="slots.readCurrent"
+            @all="slots.readAll"
+          />
+          <NoticeBox v-else title="Custom settings aren't available in this connection" icon="warning">
+            The camera didn't advertise 0xD18C. Unplug it, check Connection Mode is USB RAW CONV./BACKUP RESTORE, start
+            <code>bun run free-camera</code> before plugging in again (macOS), then reconnect.
+          </NoticeBox>
           <OperationsList :ops="info.operationsSupported" />
           <PropertiesList :items="info.devicePropertiesSupported" />
         </div>

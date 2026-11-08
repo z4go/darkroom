@@ -1,4 +1,4 @@
-import { ContainerType, OpCode, RespCode, USB_CLASS_STILL_IMAGE, hex, opName, respName } from './codes';
+import { ContainerType, FujiProp, OpCode, READ_ONLY_OPS, RespCode, SET_DEVICE_PROP_VALUE, USB_CLASS_STILL_IMAGE, hex, opName, respName } from './codes';
 
 const HEADER_LEN = 12;
 const READ_CHUNK = 512 * 1024;
@@ -87,12 +87,42 @@ export class PtpTransport {
     return new PtpTransport(device, found.iface, found.epIn, found.epOut, log);
   }
 
+  /**
+   * Opens a fresh session. If another host (e.g. macOS ptpcamerad) left one open, don't reuse it:
+   * close it, reset the USB connection and open again, as FilmKit and rawji do. The inherited
+   * session can leave the camera presenting its generic MTP personality instead of Fuji's.
+   */
   async openSession(sessionId = 1) {
     // OpenSession must use transaction id 0.
     this.txId = -1;
     const res = await this.transaction(OpCode.OpenSession, [sessionId], { allowCodes: [RespCode.SessionAlreadyOpen] });
+    if (res.code !== RespCode.SessionAlreadyOpen) {
+      this.sessionOpen = true;
+      return res;
+    }
+
+    this.log('session left open by another host: closing it and resetting USB');
+    await this.transaction(OpCode.CloseSession, []).catch((e) => this.log(`CloseSession: ${e instanceof Error ? e.message : e}`));
+    await this.reopenUsb();
+    this.txId = -1;
+    const fresh = await this.transaction(OpCode.OpenSession, [sessionId]);
     this.sessionOpen = true;
-    return res;
+    return fresh;
+  }
+
+  /** Release, close, reopen and reclaim the interface. */
+  private async reopenUsb() {
+    await this.device.releaseInterface(this.ifaceNumber).catch(() => {});
+    await this.device.close().catch(() => {});
+    await this.device.open();
+    if (this.device.configuration === null) await this.device.selectConfiguration(1);
+    try {
+      await this.device.claimInterface(this.ifaceNumber);
+    } catch (e) {
+      await this.device.close().catch(() => {});
+      throw new DeviceBusyError(e);
+    }
+    this.log(`reclaimed interface ${this.ifaceNumber}`);
   }
 
   async closeSession() {
@@ -108,7 +138,25 @@ export class PtpTransport {
   }
 
   /** Command → optional data-in phase → response. Read-only: no data-out phase in Phase 1. */
+  /** Read only transaction: refuses any op that is not on the allowlist. */
   async transaction(op: number, params: number[], opts: { allowCodes?: number[] } = {}): Promise<PtpResult> {
+    if (!READ_ONLY_OPS.has(op)) throw new Error(`Refusing to send ${opName(op)} (${hex(op)}): not on the read only allowlist`);
+    return this.run(op, params, undefined, opts);
+  }
+
+  /**
+   * The one write this app allows: point the custom settings editor at slot C1–C7
+   * (SetDevicePropValue 0xD18C, uint16). It changes which slot the following reads see,
+   * not the contents of any slot. Same call FilmKit and latent use for scanning presets.
+   */
+  async selectCustomSlot(slot: number): Promise<void> {
+    if (!Number.isInteger(slot) || slot < 1 || slot > 7) throw new Error(`Invalid custom slot ${slot}: must be 1–7`);
+    const data = new DataView(new ArrayBuffer(2));
+    data.setUint16(0, slot, true);
+    await this.run(SET_DEVICE_PROP_VALUE, [FujiProp.CustomSlot], data);
+  }
+
+  private async run(op: number, params: number[], dataOut?: DataView, opts: { allowCodes?: number[] } = {}): Promise<PtpResult> {
     const txId = ++this.txId;
     const len = HEADER_LEN + params.length * 4;
     const cmd = new DataView(new ArrayBuffer(len));
@@ -121,6 +169,20 @@ export class PtpTransport {
     this.log(`→ ${opName(op)} tx=${txId}${params.length ? ' params=' + params.map((p) => hex(p, 8)).join(',') : ''}`);
     const out = await withTimeout(this.device.transferOut(this.epOut, cmd.buffer), TIMEOUT_MS, `${opName(op)} command`);
     if (out.status !== 'ok') throw new Error(`transferOut status ${out.status}`);
+
+    if (dataOut) {
+      const dlen = HEADER_LEN + dataOut.byteLength;
+      const buf = new Uint8Array(dlen);
+      const dv = new DataView(buf.buffer);
+      dv.setUint32(0, dlen, true);
+      dv.setUint16(4, ContainerType.Data, true);
+      dv.setUint16(6, op, true);
+      dv.setUint32(8, txId, true);
+      buf.set(new Uint8Array(dataOut.buffer, dataOut.byteOffset, dataOut.byteLength), HEADER_LEN);
+      this.log(`→ data ${dataOut.byteLength} bytes`);
+      const dout = await withTimeout(this.device.transferOut(this.epOut, buf), TIMEOUT_MS, `${opName(op)} data`);
+      if (dout.status !== 'ok') throw new Error(`transferOut status ${dout.status}`);
+    }
 
     let data: DataView | undefined;
     for (;;) {
