@@ -24,9 +24,10 @@ The GitHub Pages site (https://z4go.github.io/darkroom/) exists from Phase 1 and
 - [x] Friendly "device busy / claimInterface failed" explanation (macOS daemons, Android apps)
 - [x] Pages deploy workflow
 - [ ] Turn on Pages in repo settings (Source: GitHub Actions)
-- [ ] Test on Android Chrome and on desktop Chrome/Edge on macOS; record the X100VI firmware version on the landing page
-- [ ] Rust probe (`probe/`, `nusb` or `rusb`): same GetDeviceInfo dump from the CLI, plus raw GetDevicePropValue for vendor properties
-- [ ] Start `docs/PROTOCOL.md` with the X100VI DeviceInfo dump
+- [x] Test on desktop Chromium on macOS (X100VI fw 1.20, Arc, 2026-11-08); firmware recorded on the landing page
+- [ ] Test on Android Chrome (needs the Pages deploy)
+- [ ] Rust probe (`probe/`, `nusb` or `rusb`): same GetDeviceInfo dump from the CLI, plus raw GetDevicePropValue for vendor properties. DeviceInfo lists only 4 properties (`0x5001`, `0xD303`, `0xD406`, `0xD407`), so the probe must sweep unadvertised vendor codes and check the backup/restore object path (`0x900C`/`0x900D`)
+- [x] Start `docs/PROTOCOL.md` with the X100VI DeviceInfo dump
 
 ## Phase 2: read custom settings
 

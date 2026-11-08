@@ -37,10 +37,16 @@ const OP_NAMES: Record<number, string> = {
   0x100c: 'SendObjectInfo',
   0x100d: 'SendObject',
   0x100e: 'InitiateCapture',
+  0x100f: 'FormatStore',
   0x1014: 'GetDevicePropDesc',
   0x1015: 'GetDevicePropValue',
   0x1016: 'SetDevicePropValue',
   0x101b: 'GetPartialObject',
+  // MTP extensions
+  0x9801: 'GetObjectPropsSupported',
+  0x9802: 'GetObjectPropDesc',
+  0x9803: 'GetObjectPropValue',
+  0x9805: 'GetObjectPropList',
 };
 
 const RESP_NAMES: Record<number, string> = {

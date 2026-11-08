@@ -2,7 +2,7 @@
 import SectionHead from '../SectionHead.vue';
 
 const cameras = [
-  { name: 'X100VI', firmware: '{{firmware}}', status: 'Confirmed', ok: true },
+  { name: 'X100VI', firmware: '1.20', status: 'Confirmed', ok: true },
   { name: 'Other X Trans V bodies', firmware: 'None yet', status: 'Untested', ok: false },
 ];
 const browsers = [
