@@ -1,5 +1,6 @@
 import { computed } from 'vue';
 import { clonePreset, newId, normalizePreset, type Preset } from '../ptp/preset';
+import { BUILTIN_PRESETS } from '../presets/builtin';
 import type { SlotRaw } from '../ptp/recipe';
 import { downloadJson, useStoredRef } from './useStoredRef';
 
@@ -18,6 +19,10 @@ export function usePresetLibrary() {
   const { value: backups } = useStoredRef<SlotBackup[]>('darkroom.backups.v1', []);
 
   const sorted = computed(() => [...presets.value].sort((a, b) => a.name.localeCompare(b.name)));
+  /** Your presets first, then the bundled ones. Used wherever a preset can be picked. */
+  const all = computed(() => [...sorted.value, ...BUILTIN_PRESETS]);
+  /** Sets that suggest slots (from bundled presets or your imports). */
+  const sets = computed(() => [...new Set(all.value.filter((p) => p.slotHint && p.setName).map((p) => p.setName!))]);
 
   function save(p: Preset) {
     const next = { ...p, updatedAt: new Date().toISOString() };
@@ -32,7 +37,9 @@ export function usePresetLibrary() {
   }
 
   function duplicate(p: Preset) {
-    return save({ ...clonePreset(p), id: newId(), name: `${p.name} copy`.slice(0, 25) });
+    const copy = { ...clonePreset(p), id: newId(), name: p.builtin ? p.name : `${p.name} copy`.slice(0, 25) };
+    delete copy.builtin;
+    return save(copy);
   }
 
   function exportAll() {
@@ -70,5 +77,5 @@ export function usePresetLibrary() {
     downloadJson(`darkroom-backup-${b.model}-${b.takenAt.replace(/[:.]/g, '-')}.json`, { format: 'darkroom-slot-backup', version: 1, ...b });
   }
 
-  return { presets: sorted, persisted, save, remove, duplicate, exportAll, exportOne, importFile, backups, addBackup, downloadBackup };
+  return { presets: sorted, all, builtin: BUILTIN_PRESETS, sets, persisted, save, remove, duplicate, exportAll, exportOne, importFile, backups, addBackup, downloadBackup };
 }

@@ -23,6 +23,7 @@ const rows = computed(() => {
     ['High ISO NR', typeof r.highIsoNr === 'number' ? signed(r.highIsoNr) : r.highIsoNr],
     ['Clarity', signed(r.clarity)],
     ['Smooth skin', r.smoothSkin],
+    ['Image quality', r.imageQuality],
   );
   return out;
 });

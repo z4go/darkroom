@@ -200,6 +200,12 @@ Write cautions (FilmKit): write in X RAW Studio order (`D19C` right after `D199`
 
 Confirms: film simulation enum (1 Provia, 2 Velvia, 11 Classic Chrome, 12 Acros, 16 Eterna), WB colour temperature only meaningful with `0x8007`, Highlight/Shadow in tenths. New: Dynamic range `0xFFFF` (likely DR Auto, unconfirmed).
 
+### First write (X100VI fw 1.20, 2026-11-08)
+
+Wrote preset "Anime" (Classic Chrome, Grain Off) into C1 with `/app/` Load. Name and film simulation read back correctly. **Grain:** wrote `D195` = 1 (FilmKit's Off), read back **7**. libgphoto2's table for the live property `0xD023` (`camlibs/ptp2/config.c` `fuji_graineffect`) has 2–5 exactly like FilmKit plus **6 = Off Small, 7 = Off Large**. The previous C1 grain was Strong Large, so the camera kept the size. FilmKit's own "Off = 1" was never captured (only 2–5 are marked confirmed). The app now reads 6/7 as Off and treats 1 ↔ 6/7 as equal when verifying. Still writing 1; writing 6 (Off Small) explicitly would make the stored value deterministic, untested.
+
+**Image quality `D18F`:** presets created in the app first wrote FilmKit's default 4, which made the slot shoot RAW+JPEG. The app now writes an explicit image quality (default 2 = Fine). Mapping 1 RAW, 2 Fine, 3 Normal, 4 Fine+RAW, 5 Normal+RAW comes from libgphoto2's Fuji image quality table; for the slot property it is inferred, to be confirmed on the camera.
+
 ### Other paths
 
 - `0x900C` / `0x900D`: Fuji SendObjectInfo / SendObject2 for uploading a RAF to convert (format `0xF802`, `FUP_FILE.dat`). `0xD185` is the RAW conversion profile, not the slot store. `0x901D`: unknown, unused by all projects.

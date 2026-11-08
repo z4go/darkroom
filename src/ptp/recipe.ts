@@ -32,6 +32,15 @@ export const FILM_SIMULATIONS: Record<number, string> = {
 export const MONO_SIMS = new Set([6, 7, 8, 9, 10, 12, 13, 14, 15]);
 
 export const GRAIN: Record<number, string> = { 1: 'Off', 2: 'Weak, Small', 3: 'Strong, Small', 4: 'Weak, Large', 5: 'Strong, Large' };
+
+/**
+ * Values the camera reports for grain Off. We write 1 (FilmKit; its "Off = 1" was never captured),
+ * and an X100VI fw 1.20 read back 7 after writing 1 over a "Strong, Large" slot: the camera keeps the size.
+ * libgphoto2's table for the live grain property 0xD023 has 6 = Off Small, 7 = Off Large
+ * (camlibs/ptp2/config.c fuji_graineffect); applying it to slot property 0xD195 is inferred.
+ */
+export const GRAIN_OFF_VALUES = new Set([1, 6, 7]);
+const GRAIN_READ: Record<number, string> = { ...GRAIN, 6: 'Off', 7: 'Off' };
 export const OFF_WEAK_STRONG: Record<number, string> = { 1: 'Off', 2: 'Weak', 3: 'Strong' };
 export const WB_MODES: Record<number, string> = {
   0x0000: 'As shot',
@@ -47,6 +56,12 @@ export const WB_MODES: Record<number, string> = {
   0x8021: 'Auto (ambience priority)',
 };
 export const WB_COLOR_TEMP = 0x8007;
+
+/**
+ * 0xD18F image quality. Values from libgphoto2's Fuji image quality table; applying it to the slot
+ * property is inferred. FilmKit only notes "default 4". Slot C1 on an X100VI read 3.
+ */
+export const IMAGE_QUALITY: Record<number, string> = { 1: 'RAW', 2: 'Fine', 3: 'Normal', 4: 'Fine + RAW', 5: 'Normal + RAW' };
 export const HIGH_ISO_NR: Record<number, number> = {
   0x8000: -4, 0x7000: -3, 0x4000: -2, 0x3000: -1, 0x2000: 0, 0x1000: 1, 0x0000: 2, 0x6000: 3, 0x5000: 4,
 };
@@ -78,6 +93,7 @@ export interface Recipe {
   clarity: number;
   longExposureNr: boolean;
   colorSpace: string;
+  imageQuality: string;
   /** Untouched raw values, so nothing is lost when an encoding is still unknown. */
   raw: Record<string, number>;
 }
@@ -99,7 +115,7 @@ export function decodeSlot(slot: number, name: string, raw: SlotRaw): Recipe {
     monochrome: mono,
     monoWarmCool: mono ? tenths(g(5)) : null, // D193
     monoMagentaGreen: mono ? tenths(g(6)) : null, // D194
-    grain: label(GRAIN, g(7)), // D195
+    grain: label(GRAIN_READ, g(7)), // D195
     colorChrome: label(OFF_WEAK_STRONG, g(8)), // D196
     colorChromeFxBlue: label(OFF_WEAK_STRONG, g(9)), // D197
     smoothSkin: label(OFF_WEAK_STRONG, g(10)), // D198
@@ -116,6 +132,7 @@ export function decodeSlot(slot: number, name: string, raw: SlotRaw): Recipe {
     clarity: tenths(g(20)), // D1A2
     longExposureNr: g(21) === 1, // D1A3
     colorSpace: label(COLOR_SPACE, g(22)), // D1A4
+    imageQuality: label(IMAGE_QUALITY, g(1)), // D18F
     raw: Object.fromEntries(
       Object.entries(raw).map(([code, v]) => [`0x${Number(code).toString(16).toUpperCase()}`, v]),
     ),

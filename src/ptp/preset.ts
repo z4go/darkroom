@@ -6,6 +6,8 @@ import {
   decodeSlot,
   FILM_SIMULATIONS,
   GRAIN,
+  GRAIN_OFF_VALUES,
+  IMAGE_QUALITY,
   HIGH_ISO_NR,
   MONO_SIMS,
   OFF_WEAK_STRONG,
@@ -18,6 +20,7 @@ import {
 } from './recipe';
 
 export const DR_AUTO = 0xffff;
+export const QUALITY_FINE = 2;
 
 export interface Preset {
   id: string;
@@ -40,9 +43,17 @@ export interface Preset {
   sharpness: number; // D1A0
   highIsoNr: number; // D1A1, −4…+4
   clarity: number; // D1A2
+  /** D18F. Optional for presets stored before this field existed; those write JPEG Fine. */
+  imageQuality?: number;
   /** Fields we don't edit, kept as read from the camera so a write doesn't change them. */
   base: { d18e: number; d18f: number; d191: number; d1a3: number; d1a4: number; d1a5: number };
   source?: string;
+  /** Suggested camera slot (1–7), used to pre-fill batch loading. */
+  slotHint?: number;
+  /** Bundled with the site (read only; duplicate to edit). */
+  builtin?: boolean;
+  /** Name of the set a preset belongs to, e.g. "Japan, November". */
+  setName?: string;
   updatedAt: string;
 }
 
@@ -66,6 +77,7 @@ export const OPTIONS = {
   filmSimulation: options(FILM_SIMULATIONS),
   grain: options(GRAIN),
   offWeakStrong: options(OFF_WEAK_STRONG),
+  imageQuality: options(IMAGE_QUALITY),
   whiteBalance: options(WB_MODES).filter((o) => o.value !== 0), // "As shot" only makes sense for RAW conversion
   dynamicRange: [
     { value: 100, label: 'DR100' },
@@ -113,6 +125,7 @@ export function defaultPreset(): Preset {
     sharpness: 0,
     highIsoNr: 0,
     clarity: 0,
+    imageQuality: QUALITY_FINE,
     base: { d18e: 7, d18f: 4, d191: 0, d1a3: 1, d1a4: 1, d1a5: 7 },
     updatedAt: new Date().toISOString(),
   };
@@ -128,7 +141,7 @@ export function presetFromRaw(name: string, raw: SlotRaw, source?: string): Pres
     filmSimulation: g(0xd192) || 1,
     monoWarmCool: fromTenths(g(0xd193)),
     monoMagentaGreen: fromTenths(g(0xd194)),
-    grain: g(0xd195) || 1,
+    grain: GRAIN_OFF_VALUES.has(g(0xd195)) ? 1 : g(0xd195) || 1,
     colorChrome: g(0xd196) || 1,
     colorChromeFxBlue: g(0xd197) || 1,
     smoothSkin: g(0xd198) || 1,
@@ -143,6 +156,7 @@ export function presetFromRaw(name: string, raw: SlotRaw, source?: string): Pres
     sharpness: fromTenths(g(0xd1a0)),
     highIsoNr: nr ?? 0,
     clarity: fromTenths(g(0xd1a2)),
+    imageQuality: IMAGE_QUALITY[g(0xd18f)] ? g(0xd18f) : QUALITY_FINE,
     base: { d18e: g(0xd18e), d18f: g(0xd18f), d191: g(0xd191), d1a3: g(0xd1a3), d1a4: g(0xd1a4), d1a5: g(0xd1a5) },
     source,
     updatedAt: new Date().toISOString(),
@@ -160,7 +174,7 @@ export function presetWrites(p: Preset): PropWrite[] {
   const w: PropWrite[] = [];
   const add = (code: number, value: number) => w.push({ code, value: u16(value) });
   add(0xd18e, p.base.d18e || 7);
-  add(0xd18f, p.base.d18f || 4);
+  add(0xd18f, p.imageQuality && IMAGE_QUALITY[p.imageQuality] ? p.imageQuality : QUALITY_FINE);
   add(0xd190, p.dynamicRange);
   add(0xd191, p.base.d191);
   add(0xd192, p.filmSimulation || 1);
@@ -213,6 +227,7 @@ export function validatePreset(p: Preset): string[] {
   if (!/^[\x20-\x7e]*$/.test(p.name)) e.push('Name can only use plain ASCII letters, digits and symbols.');
   if (!FILM_SIMULATIONS[p.filmSimulation]) e.push('Unknown film simulation.');
   if (!GRAIN[p.grain]) e.push('Unknown grain setting.');
+  if (p.imageQuality !== undefined && !IMAGE_QUALITY[p.imageQuality]) e.push('Unknown image quality.');
   for (const [k, v] of [['Color Chrome', p.colorChrome], ['Color Chrome FX Blue', p.colorChromeFxBlue], ['Smooth skin', p.smoothSkin]] as const)
     if (!OFF_WEAK_STRONG[v]) e.push(`Unknown ${k} setting.`);
   if (!WB_MODES[p.whiteBalance]) e.push('Unknown white balance mode.');
@@ -246,6 +261,8 @@ export function normalizePreset(x: unknown): Preset | null {
     name: o.name,
     base: { ...d.base, ...(o.base && typeof o.base === 'object' ? o.base : {}) },
     source: typeof o.source === 'string' ? o.source : undefined,
+    slotHint: typeof o.slotHint === 'number' && o.slotHint >= 1 && o.slotHint <= 7 ? o.slotHint : undefined,
+    setName: typeof o.setName === 'string' ? o.setName : undefined,
     id: newId(),
     updatedAt: new Date().toISOString(),
   } as Preset;
