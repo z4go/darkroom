@@ -1,6 +1,6 @@
 # darkroom plan
 
-PTP-over-USB toolkit to read and write Fujifilm custom settings (C1–C7): a Rust probe for protocol research, plus a WebUSB web app.
+WebUSB web app to read and write Fujifilm custom settings (C1–C7) over PTP. Everything, including protocol research, runs in the browser on one TypeScript PTP core (`src/ptp/`). No Rust/WASM.
 
 The GitHub Pages site (https://z4go.github.io/darkroom/) exists from Phase 1 and grows with each phase, so every milestone can be tested on a real phone (Android Chrome) or desktop browser right away.
 
@@ -26,16 +26,16 @@ The GitHub Pages site (https://z4go.github.io/darkroom/) exists from Phase 1 and
 - [ ] Turn on Pages in repo settings (Source: GitHub Actions)
 - [x] Test on desktop Chromium on macOS (X100VI fw 1.20, Arc, 2026-11-08); firmware recorded on the landing page
 - [ ] Test on Android Chrome (needs the Pages deploy)
-- [ ] Rust probe (`probe/`, `nusb` or `rusb`): same GetDeviceInfo dump from the CLI, plus raw GetDevicePropValue for vendor properties. DeviceInfo lists only 4 properties (`0x5001`, `0xD303`, `0xD406`, `0xD407`), so the probe must sweep unadvertised vendor codes and check the backup/restore object path (`0x900C`/`0x900D`)
+- [ ] `/app/explore/` page (read only): read the advertised properties, sweep GetDevicePropValue over unadvertised vendor codes, and list storage/objects to check the backup/restore path (`0x900C`/`0x900D`). DeviceInfo lists only 4 properties (`0x5001`, `0xD303`, `0xD406`, `0xD407`). Export results as JSON for `docs/PROTOCOL.md`
 - [x] Start `docs/PROTOCOL.md` with the X100VI DeviceInfo dump
 
 ## Phase 2: read custom settings
 
 - [ ] Find the vendor properties and ops for selecting a C-slot and reading its fields (cross-reference FilmKit, latent, libfuji)
 - [ ] Decode film simulation, grain, color chrome, WB and shift, DR, tone curve, color, sharpness, NR, clarity
-- [ ] Rust probe: dump C1–C7 to JSON
+- [ ] Explore page: dump C1–C7 to JSON
 - [ ] Site: show C1–C7 as read-only recipe cards; export JSON
-- [ ] Decide whether the PTP core moves to Rust → WASM (`wasm-pack`, loaded by the app) or stays in TS. Keep one source of truth for the field encoding.
+- [ ] Keep the field encoding in one place in `src/ptp/` so read and write share it.
 
 ## Phase 3: write custom settings
 
