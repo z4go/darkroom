@@ -7,7 +7,7 @@ const proof = ['Open source, MIT', 'No account, no server', 'Works on Android Ch
 <template>
   <section class="hero">
     <div class="wrap">
-      <span class="badge"><span class="dot" />Early preview · read only</span>
+      <span class="badge"><span class="dot" />Early preview · tested on X100VI</span>
       <h1 class="heading-1"><span class="line">Your film recipes,</span><span class="line">written straight to the camera</span></h1>
       <p class="sub body-7">
         darkroom reads and writes the C1 to C7 custom settings on Fujifilm X series cameras over a USB cable.
@@ -28,7 +28,7 @@ const proof = ['Open source, MIT', 'No account, no server', 'Works on Android Ch
             <dt>model</dt><dd>X100VI</dd>
             <dt>firmware</dt><dd>read from the camera</dd>
             <dt>usb</dt><dd>0x04cb · Still Image class</dd>
-            <dt>slots</dt><dd>C1 · C2 · C3 · C4 · C5 · C6 · C7 <span class="muted">(Phase 2)</span></dd>
+            <dt>slots</dt><dd>C1 · C2 · C3 · C4 · C5 · C6 · C7</dd>
           </dl>
         </div>
       </div>

@@ -7,7 +7,7 @@ WebUSB web app to read and write Fujifilm custom settings (C1–C7) over PTP. Ru
 <!-- TODO: screenshot of the probe page -->
 <!-- ![darkroom probe page](docs/screenshot.png) -->
 
-> **Status:** Phase 1 (read-only). Connects to the camera and reads device info. See [PLAN.md](PLAN.md).
+> **Status:** reads and writes custom settings C1–C7 on the X100VI (firmware 1.20). Preset library with built-in recipes. See [PLAN.md](PLAN.md).
 
 ## Use it
 
