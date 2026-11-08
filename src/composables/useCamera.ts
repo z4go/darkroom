@@ -79,6 +79,12 @@ export function useCamera(log: LogFn) {
     return transport.selectCustomSlot(slot);
   }
 
+  /** Write one custom slot property (0xD18C–0xD1A5 only; enforced by the transport). */
+  async function writeProp(code: number, data: DataView) {
+    if (!transport || status.value !== 'connected') throw new Error('Camera not connected');
+    return transport.writeProp(code, data);
+  }
+
   async function disconnect() {
     await transport?.close().catch(() => {});
     transport = null;
@@ -100,5 +106,5 @@ export function useCamera(log: LogFn) {
     void transport?.close();
   });
 
-  return { status, error, info, device, usbMode, connect, disconnect, transaction, selectCustomSlot };
+  return { status, error, info, device, usbMode, connect, disconnect, transaction, selectCustomSlot, writeProp };
 }

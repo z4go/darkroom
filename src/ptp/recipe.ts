@@ -29,11 +29,11 @@ export const FILM_SIMULATIONS: Record<number, string> = {
   20: 'Reala Ace',
 };
 
-const MONO_SIMS = new Set([6, 7, 8, 9, 10, 12, 13, 14, 15]);
+export const MONO_SIMS = new Set([6, 7, 8, 9, 10, 12, 13, 14, 15]);
 
-const GRAIN: Record<number, string> = { 1: 'Off', 2: 'Weak, Small', 3: 'Strong, Small', 4: 'Weak, Large', 5: 'Strong, Large' };
-const OFF_WEAK_STRONG: Record<number, string> = { 1: 'Off', 2: 'Weak', 3: 'Strong' };
-const WB_MODES: Record<number, string> = {
+export const GRAIN: Record<number, string> = { 1: 'Off', 2: 'Weak, Small', 3: 'Strong, Small', 4: 'Weak, Large', 5: 'Strong, Large' };
+export const OFF_WEAK_STRONG: Record<number, string> = { 1: 'Off', 2: 'Weak', 3: 'Strong' };
+export const WB_MODES: Record<number, string> = {
   0x0000: 'As shot',
   0x0002: 'Auto',
   0x0004: 'Daylight',
@@ -46,8 +46,8 @@ const WB_MODES: Record<number, string> = {
   0x8007: 'Color temperature',
   0x8021: 'Auto (ambience priority)',
 };
-const WB_COLOR_TEMP = 0x8007;
-const HIGH_ISO_NR: Record<number, number> = {
+export const WB_COLOR_TEMP = 0x8007;
+export const HIGH_ISO_NR: Record<number, number> = {
   0x8000: -4, 0x7000: -3, 0x4000: -2, 0x3000: -1, 0x2000: 0, 0x1000: 1, 0x0000: 2, 0x6000: 3, 0x5000: 4,
 };
 const COLOR_SPACE: Record<number, string> = { 1: 'sRGB', 2: 'Adobe RGB' };

@@ -39,8 +39,9 @@ The GitHub Pages site (https://z4go.github.io/darkroom/) exists from Phase 1 and
 
 ## Phase 3: write custom settings
 
-- [ ] Data-out PTP phase (SetDevicePropValue) in the transport
-- [ ] Backup flow: read every slot and save a file before the first write
-- [ ] Edit a slot in the UI, write it, then read it back and verify
-- [ ] Import and export recipe files; share via URL
+- [x] Data-out PTP phase (SetDevicePropValue) in the transport, restricted to `0xD18C`–`0xD1A5`
+- [x] Backup flow: read every slot before the first write of a session; kept in the browser, downloadable
+- [ ] Edit a slot in the UI, write it, then read it back and verify (built: preset library + editor + Load into slot; needs a hardware test)
+- [x] Import and export recipe files (JSON)
+- [ ] Share a preset via URL
 - [ ] Landing page: list cameras confirmed for writing, per firmware
