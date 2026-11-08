@@ -16,6 +16,7 @@ import { LICENSE, PROTOCOL, REPO } from '../links';
 <template>
   <SiteNav
     home="./"
+    home-current
     :links="[
       { label: 'How it works', href: '#how' },
       { label: 'Compatibility', href: '#compat' },
@@ -51,6 +52,7 @@ import { LICENSE, PROTOCOL, REPO } from '../links';
     note="darkroom · Not affiliated with Fujifilm"
     :links="[
       { label: 'Protocol', href: PROTOCOL },
+      { label: 'Privacy', href: './privacy/' },
       { label: 'MIT license', href: LICENSE },
       { label: 'GitHub', href: REPO },
     ]"

@@ -66,6 +66,7 @@ const { status, error, info, device, connect, disconnect } = useCamera(log);
     :links="[
       { label: 'Home', href: '../' },
       { label: 'Protocol', href: PROTOCOL },
+      { label: 'Privacy', href: '../privacy/' },
       { label: 'GitHub', href: REPO },
     ]"
   />

@@ -11,7 +11,7 @@ interface Feature {
 }
 
 const features: Feature[] = [
-  { icon: 'usb', title: 'Direct USB connection', body: 'Talks PTP to the camera through WebUSB. No desktop app, no driver, no Wi‑Fi pairing.' },
+  { icon: 'usb', title: 'Direct USB connection', body: 'Talks PTP to the camera through WebUSB. No desktop app, no driver, no wireless pairing.' },
   { icon: 'sliders', title: 'All seven slots at once', body: 'See film simulation, grain, white balance, tone and color for C1 to C7 side by side.', phase: 'Phase 2' },
   { icon: 'download', title: 'Recipes as files', body: "Export a slot to a file, share it, and load someone else's recipe into any slot.", phase: 'Phase 3' },
   { icon: 'lock', title: 'Stays on your device', body: 'Static site with no backend, no trackers and no external CDNs. Your camera data never leaves the browser.' },
