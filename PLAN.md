@@ -31,10 +31,10 @@ The GitHub Pages site (https://z4go.github.io/darkroom/) exists from Phase 1 and
 
 ## Phase 2: read custom settings
 
-- [ ] Find the vendor properties and ops for selecting a C-slot and reading its fields (cross-reference FilmKit, latent, libfuji)
-- [ ] Decode film simulation, grain, color chrome, WB and shift, DR, tone curve, color, sharpness, NR, clarity
+- [x] Find the vendor properties and ops for selecting a C-slot and reading its fields: `0xD18C` select, `0xD18D` name, `0xD18E`–`0xD1A5` fields (FilmKit). Needs a fresh session (never reuse `ptpcamerad`'s)
+- [x] Decode film simulation, grain, color chrome, WB and shift, DR, tone curve, color, sharpness, NR, clarity (`src/ptp/recipe.ts`; C1 matches FilmKit on X100VI fw 1.20)
 - [ ] Explore page: dump C1–C7 to JSON
-- [ ] Site: show C1–C7 as read-only recipe cards; export JSON
+- [x] Site: show C1–C7 as read-only recipe cards; export JSON. Only write is `0xD18C` slot select, restored after the scan. Tested on X100VI fw 1.20: all 7 names match FilmKit
 - [ ] Keep the field encoding in one place in `src/ptp/` so read and write share it.
 
 ## Phase 3: write custom settings

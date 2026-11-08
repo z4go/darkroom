@@ -6,3 +6,6 @@ dist/
 # editor
 .vscode/
 .idea/
+
+# local screenshots dropped in the repo root
+/Screenshot*.png

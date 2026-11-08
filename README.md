@@ -23,6 +23,7 @@ On macOS, `ptpcamerad` may hold the camera. The [site](https://z4go.github.io/da
 bun install
 bun run dev        # http://localhost:5173/darkroom/
 bun run build      # typecheck + static build into dist/
+bun run free-camera [minutes]   # macOS: keep ptpcamerad off the camera (default 30 min)
 ```
 
 WebUSB needs a secure context. `localhost` counts; GitHub Pages serves HTTPS.
