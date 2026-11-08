@@ -28,7 +28,7 @@ const copyLabel = computed(() => ({ idle: 'Copy JSON', copied: 'Copied', failed:
   <section class="panel">
     <div class="panel-head">
       <p class="title-3">Device</p>
-      <button class="btn secondary sm" type="button" @click="copy(JSON.stringify(info, null, 2))">
+      <button title="Copies device info without the serial number" class="btn secondary sm" type="button" @click="copy(JSON.stringify({ ...info, serialNumber: '(redacted)' }, null, 2))">
         <AppIcon name="copy" /><span>{{ copyLabel }}</span>
       </button>
     </div>
